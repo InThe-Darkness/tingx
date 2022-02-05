@@ -36,7 +36,7 @@ public:
         return fd == fd_;
     }
 
-private:
+protected:
     int fd_;
     bool is_close_;
 };

@@ -82,6 +82,10 @@ class Ptr {
     return p_;
   }
 
+  T* Get() {
+      return p_;
+  }
+
   T& operator*() const {
     return *p_;
   }
