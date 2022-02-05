@@ -1,4 +1,0 @@
-/home/kevin/MINE/tingx/build/CMakeFiles/rebuild_cache.dir
-/home/kevin/MINE/tingx/build/CMakeFiles/edit_cache.dir
-/home/kevin/MINE/tingx/build/CMakeFiles/client.dir
-/home/kevin/MINE/tingx/build/CMakeFiles/tingx.dir
