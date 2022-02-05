@@ -14,6 +14,7 @@
 #include "core/tingx_descriptor.hpp"
 #include "core/tingx_socket.h"
 #include "core/tingx_epoll.h"
+#include "core/tingx_cycle.h"
 
 using namespace std;
 using namespace tingx;
@@ -27,8 +28,8 @@ int main() {
     Ptr<Epoll> epoll{new Epoll()};
     epoll->Add(pListen, EpollEvent::Read);
 
+    Cycle core_cycle;
     map<int, string> name;
-    vector<Ptr<Descriptor>> opened;
 
     name[pListen->Getfd()] = Socket::GetIpStr(pListen);
     cout << "server is working on: " << name[pListen->Getfd()] << endl;
@@ -47,7 +48,7 @@ int main() {
 
                 epoll->Add(pConn, EpollEvent::Read);
                 name[pConn->Getfd()] = clnt_name;
-                opened.push_back(pConn.Get());
+                core_cycle.AddOpen(pConn);
             } else {
                 int n = read(pDescriptor->Getfd(), &recvbuf[0], recvbuf.length());
 
@@ -55,11 +56,9 @@ int main() {
                     cout << name[pDescriptor->Getfd()] << " close" << endl;
                     epoll->Del(pDescriptor);
 
-                    vector<Ptr<Descriptor>>::iterator iter = opened.begin();
-                    while(iter != opened.end() && (*iter)->Getfd() != pDescriptor->Getfd()) iter++;
-                    opened.erase(iter);
+                    core_cycle.DelOpen(pDescriptor);
                 } else {
-                    cout << name[pDescriptor->Getfd()] << ">";
+                    cout << name[pDescriptor->Getfd()] << ">" << endl;
                     for (int i = 0; i < n; i++)
                         cout << recvbuf[i];
                     cout << endl;

@@ -1,6 +1,8 @@
 #ifndef SRC_CORE_TINGX_REFCOUNT_HPP_
 #define SRC_CORE_TINGX_REFCOUNT_HPP_
 
+#include <cstddef>
+
 namespace tingx {
 
 template <typename T>
@@ -25,12 +27,16 @@ public:
     virtual ~RefCounted() {}
 
 private:
-  virtual size_t AddRef() {
-    return ++ref_count_;
-  }
+    virtual size_t AddRef() {
+        return ++ref_count_;
+    }
 
   virtual size_t Release() {
-    return --ref_count_;
+    int new_ref_count = --ref_count_;
+    if (ref_count_ == 0) {
+        delete this;
+    }
+    return new_ref_count;
   }
 
   mutable size_t ref_count_;
