@@ -1,0 +1,1 @@
+/usr/bin/c++  -g  -rdynamic CMakeFiles/tingx.dir/src/tingx.cc.o  -o tingx 

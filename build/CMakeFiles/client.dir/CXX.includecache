@@ -1,0 +1,20 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/kevin/MINE/tingx/src/test/client.cc
+unistd.h
+-
+sys/socket.h
+-
+arpa/inet.h
+-
+strings.h
+-
+iostream
+-
+
