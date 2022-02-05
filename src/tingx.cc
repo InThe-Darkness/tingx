@@ -4,12 +4,17 @@
 #include<arpa/inet.h>
 #include<signal.h>
 #include<strings.h>
+#include<stdio.h>
 
 #include<iostream>
 #include<vector>
 #include<algorithm>
 #include<map>
+
+#include "core/tingx_descriptor.hpp"
+
 using namespace std;
+using namespace tingx;
 
 bool exiting = false;
 
@@ -35,7 +40,10 @@ int main() {
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    bind(serv_fd, (struct sockaddr*)&serv_addr, addr_len);
+    if (bind(serv_fd, (struct sockaddr*)&serv_addr, addr_len)) {
+        perror("bind");
+        return 0;
+    }
 
     listen(serv_fd, 10);
     
@@ -47,11 +55,14 @@ int main() {
     epoll_ctl(epoll_fd, EPOLL_CTL_ADD, serv_fd, &ev);
 
     vector<struct epoll_event> events(20);
-    vector<int> opened {serv_fd, epoll_fd};
     map<int, string> name;
+    vector<Ptr<Descriptor>> opened;
     string serv_str = GetName(serv_addr);
     cout << "server is working on: " << serv_str << endl;
     name[serv_fd] = serv_str;
+
+    opened.emplace_back(new Descriptor(serv_fd));
+    opened.emplace_back(new Descriptor(epoll_fd));
 
     string recvbuf(1024, 0), sendbuf;
     for (;;) {
@@ -67,7 +78,7 @@ int main() {
                 ev.data.fd = clnt_fd;
                 epoll_ctl(epoll_fd, EPOLL_CTL_ADD, clnt_fd, &ev);
                 name[clnt_fd] = clnt_name;
-                opened.push_back(clnt_fd);
+                opened.emplace_back(new Descriptor(clnt_fd));
             } else {
                 int n = read(events[i].data.fd, &recvbuf[0], recvbuf.length());
                 cout << name[events[i].data.fd] << ">";
@@ -77,8 +88,10 @@ int main() {
                 if (n == 0) {
                     cout << name[events[i].data.fd] << " close" << endl;
                     epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, nullptr);
-                    close(events[i].data.fd);
-                    opened.erase(find(opened.begin(), opened.end(), events[i].data.fd));
+
+                    vector<Ptr<Descriptor>>::iterator iter = opened.begin();
+                    while(iter != opened.end() && (*iter)->Getfd() != events[i].data.fd) iter++;
+                    opened.erase(iter);
                 }
                 write(events[i].data.fd, &recvbuf[0], n);
             }
@@ -88,9 +101,6 @@ int main() {
     }
 
     cout << endl << "exit..." << endl;
-
-    for (auto &iter : opened) 
-        close(iter);
 
     return 0;
 }

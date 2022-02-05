@@ -2,7 +2,7 @@
 #include<sys/socket.h>
 #include<arpa/inet.h>
 #include<strings.h>
-
+#include<stdio.h>
 #include<iostream>
 
 using namespace std;
@@ -33,6 +33,9 @@ int main() {
                 cout << recvbuf[i];
             cout << endl;
         }
+    }
+    else {
+        perror("connect");
     }
 
     return 0;
