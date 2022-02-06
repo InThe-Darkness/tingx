@@ -1,5 +1,4 @@
-#ifndef SRC_CORE_TINGX_CONFIG_HPP_
-#define SRC_CORE_TINGX_CONFIG_HPP_
+#include "core/tingx_config.h"
 
 namespace tingx {
 
@@ -9,8 +8,5 @@ const int kDefaultMaxEpollEvent = 100;
 
 const int kDefaultEpollTimeOut = 100; // 100ms
 
-
+std::vector<Module*>tingx_modules;
 }
-
-
-#endif

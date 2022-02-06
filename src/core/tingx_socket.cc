@@ -1,5 +1,5 @@
 #include <strings.h>
-#include "core/tingx_config.hpp"
+#include "core/tingx_config.h"
 #include "core/tingx_socket.h"
 
 
@@ -30,8 +30,14 @@ int Socket::GetType() {
     return type_;
 }
 
-int Socket::GetIp() {
-    return addr_.sin_addr.s_addr;
+int Socket::GetPort() {
+    return ntohs(addr_.sin_port);
+}
+
+std::string& Socket::GetIpStr() {
+    if (ip_str_.length() == 0)
+        ip_str_ = Socket::GetIpStr(this);
+    return ip_str_;
 }
 
 struct sockaddr_in& Socket::GetAddrStructure() {

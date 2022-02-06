@@ -1,4 +1,4 @@
-#include "core/tingx_config.hpp"
+#include "core/tingx_config.h"
 #include "core/tingx_epoll.h"
 
 namespace tingx {

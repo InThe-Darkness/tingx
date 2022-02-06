@@ -18,7 +18,8 @@ public:
 
     int GetFamily();
     int GetType();
-    int GetIp();
+    int GetPort();
+    std::string& GetIpStr();
     struct sockaddr_in& GetAddrStructure();
 
     static std::string GetIpStr(Socket *socket);
@@ -27,7 +28,7 @@ protected:
     struct sockaddr_in addr_;
     int type_;
     socklen_t addr_len = sizeof(struct sockaddr_in);
-
+    std::string ip_str_;
 };
 
 
