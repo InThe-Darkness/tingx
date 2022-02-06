@@ -2,25 +2,23 @@
 
 #include <iostream>
 #include <vector>
+#include <sys/stat.h>
+#include <fstream>
 
 using namespace tingx;
 using namespace std;
 
 int main() {
 
-    Descriptor des(100);
-    des.SetIsClose(true);
+    std::string send_buffer(
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Length: 33\r\n"
+        "Content-Type: text/html\r\n"
+        "\r\n"
+        "<html><h1>hello world</h1></html>"
+    );
 
-    Descriptor des2;
-    des2 = des;
-
-    Ptr<Descriptor> p(new Descriptor(200));
-    p->SetIsClose(true);
-    cout << "fd is " << p->Getfd() << endl;
-
-    vector<Descriptor> v;
-    v.push_back(Descriptor());
-
+    cout << send_buffer.length() << endl;
 
 
     return 0;
