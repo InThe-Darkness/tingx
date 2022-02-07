@@ -1,5 +1,5 @@
 #include "core/tingx_descriptor.hpp"
-
+#include "core/tingx_parser.h"
 #include <iostream>
 #include <vector>
 #include <sys/stat.h>
@@ -21,5 +21,15 @@ int main() {
     cout << send_buffer.length() << endl;
 
 
+    ConfigFileParser parser("../conf/tingx.conf");
+    /*
+    parser.Parse();
+
+    ParserObject* obj = parser.Get();
+    string conf_buffer;
+    ParserObject::SerializeOut(obj, conf_buffer);
+
+    cout << conf_buffer << endl;
+    */
     return 0;
 }

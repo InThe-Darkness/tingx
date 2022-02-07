@@ -2,6 +2,7 @@
 #define SRC_CORE_TINGX_MODULE_H_
 
 #include <string>
+#include <vector>
 #include "core/tingx_descriptor.hpp"
 
 namespace tingx {
@@ -9,6 +10,12 @@ namespace tingx {
 enum class ModuleType {CORE, HTTP, MAIL, NORMAL};
 
 enum ProcessStatus {AGAIN, OK, ERROR, CLOSE};
+
+
+struct Command {
+    std::string name;
+
+};
 
 class Module {
 public:
@@ -23,17 +30,20 @@ public:
     ModuleType GetType() { return type_; }
     int GetIndex() { return index_; }
 
+    std::vector<Command>& GetCommands() { return commands_; }
 
 protected:
 
     void SetIndex(int index) { index_ = index; }
 
 
+    std::vector<Command> commands_;
+
+
 private:
     std::string name_;
     ModuleType type_;
     int index_;
-
 };
 
 }

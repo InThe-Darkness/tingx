@@ -6,10 +6,63 @@
 
 namespace tingx {
 
+void ParserObject::SerializeOut(ParserObject *root, std::string &buffer, int indent) {
+    if (root->GetType() == Type::STRING) {
+        if (indent) {
+            buffer.append(std::string(' ', indent));
+        }
+        buffer.append(static_cast<String*>(root)->Get());
+        buffer.push_back('\n');
+        return;
+    } else if (root->GetType() == Type::KVITEM) {
+        buffer.append(std::string(' ', indent));
+        KVItem *p = static_cast<KVItem*>(root);
+        buffer.append(static_cast<String*>(p->first.Get())->Get());
+        buffer.push_back(' ');
+
+        if (p->second->GetType() == Type::ARRAY) {
+            ArrayObj &obj = static_cast<Array*>(p->second.Get())->Get();
+            for (auto iter : obj) {
+                if (iter->GetType() == Type::BLOCK) {
+                    buffer.push_back('{');
+                    buffer.push_back('\n');
+                    SerializeOut(iter, buffer, indent + 4);
+                } else {
+                    buffer.append(static_cast<String*>(iter.Get())->Get());
+                    buffer.push_back(' ');
+                }
+            }
+            buffer.push_back('\n');
+            if (obj.back()->GetType() == Type::BLOCK) {
+                buffer.append(std::string(' ', indent));
+                buffer.push_back('}');
+                buffer.push_back('\n');
+            }
+        } else if (p->second->GetType() == Type::BLOCK) {
+            buffer.push_back('{');
+            buffer.push_back('\n');
+            SerializeOut(p->second, buffer, indent + 4);
+            buffer.append(std::string(' ', indent));
+            buffer.push_back('}');
+            buffer.push_back('\n');
+        } else {
+            buffer.append(static_cast<String*>(p->second.Get())->Get());
+            buffer.push_back('\n');
+        }
+    } else { // BLOCK
+        Block* pBlock = static_cast<Block*>(root);
+        BlockObj& obj = pBlock->Get();
+        for (auto iter : obj) {
+            SerializeOut(iter, buffer, indent + 4);
+        }
+    }
+}
+
+
 // ------------------------- Array--------------------------
 
 Array::Array() {
-    type_ = Type::Array;
+    type_ = Type::ARRAY;
 }
 
 void Array::Add(ParserObject *val) {
@@ -27,58 +80,80 @@ int Array::Parse(const char *pos, int len) {
 
 
 
-// ------------------------- Dict --------------------------
-Dict::Dict() {
-    type_ = Type::Dict;
+// ------------------------- Block --------------------------
+Block::Block() {
+    type_ = Type::BLOCK;
 }
 
-void Dict::Add(const std::string& key, ParserObject* val) {
-    obj_.insert(std::make_pair(key, val));
+void Block::Add(ParserObject *val) {
+    obj_.push_back(val);
 }
 
-DictObj& Dict::Get() {
+BlockObj& Block::Get() {
     return obj_;
 }
 
 
-int Dict::Parse(const char *pos, int len) {
+int Block::Parse(const char *pos, int len) {
 
     return 0;
 }
 
 
-// ------------------------- String --------------------------
-String::String() {
-    type_ = Type::String;
+// ------------------------- KVItem --------------------------
+KVItem::KVItem() {
+    type_ = Type::KVITEM;
 }
+
+KVItem::KVItem(ParserObject* key, ParserObject *value) {
+    type_ = Type::KVITEM;
+    first = key;
+    second = value;
+};
+
+void KVItem::Add(ParserObject* val) {
+    if (first == nullptr) {
+        first = val;
+
+    } else {
+        second = val;
+    }
+}
+
+
+// ------------------------- String --------------------------
+
+String::String() {
+    type_ = Type::STRING;
+}
+
+void String::Add(ParserObject*) { }
 
 StringObj& String::Get() {
     return obj_;
 }
 
 int String::Parse(const char *pos, int len) {
-
+    obj_ = std::string(pos, len);
     return 0;
 }
 
-
-// ------------------------- Integer --------------------------
-Integer::Integer() {
-    type_ = Type::Integer;
-}
-
-IntegerObj Integer::Get() {
-    return obj_;
-}
-
-int Integer::Parse(const char *pos, int len) {
-
-    return 0;
-}
 
 
 // ------------------------- ConfigFileParser --------------------------
+ConfigFileParser::ConfigFileParser(const char *filename) {
+    ConfigFileParser(std::string(filename));
+}
+
+ConfigFileParser::ConfigFileParser(std::string &&filename) : filename_(filename) {
+    Init();
+}
+
 ConfigFileParser::ConfigFileParser(std::string& filename) : filename_(filename) {
+    Init();
+}
+
+void ConfigFileParser::Init() {
     struct stat buf;
     if (stat(filename_.c_str(), &buf) != 0) {
         perror(filename_.c_str());
@@ -102,7 +177,7 @@ ConfigFileParser::ConfigFileParser(std::string& filename) : filename_(filename) 
     infile.close();
     is_open_ = true;
 
-    root_.Attach(new Dict());
+    root_.Attach(new Block());
 }
 
 bool ConfigFileParser::GetIsOpen() {
@@ -119,7 +194,7 @@ int ConfigFileParser::Parse(Status status_, ParserObject* root) {
     Status status = status_;
     Ptr<ParserObject> key, val;
     int st, ed;
-    while(pos_ < buffer.length()) {
+    while (pos_ < buffer.length()) {
         if (buffer[pos_] == '#') {
             Parse(COMMENT, root);
             ++pos_;
@@ -127,33 +202,77 @@ int ConfigFileParser::Parse(Status status_, ParserObject* root) {
 
         switch (status) {
         case START:
-            if (isgraph(buffer[pos_])) {
+            if (isgraph(buffer[pos_]) && buffer[pos_] != ';') {
                 st = pos_;
-                if (key == nullptr)
+                if (key == nullptr) {
                     status = KEY;
-                else 
+                }
+                else {
                     status = VALUE;
+                    if (buffer[pos_] == '{') {
+                        ++pos_;
+                        if (val == nullptr) {
+                            val.Attach(new Block());
+                            Parse(START, val);
+
+                        } else if (val->GetType() == ParserObject::Type::ARRAY) {
+                            Ptr<ParserObject> p(new Block());
+                            static_cast<Array*>(val.Get())->Add(p);
+                            Parse(START, p);
+
+                        } else {
+                            Ptr<ParserObject> pBlock(new Block());
+                            Ptr<ParserObject> pArray(new Array());
+                            static_cast<Array*>(pArray.Get())->Add(val);
+                            static_cast<Array*>(pArray.Get())->Add(pBlock);
+                            val.Attach(pArray.Detach());
+                            Parse(START, pBlock);
+
+                        }
+                        root->Add(new KVItem(key.Detach(), val.Detach()));
+                    }
+                }
             }
             break;
 
         case KEY:
-            if (!isgraph(buffer[pos_])) {
+            if (!isgraph(buffer[pos_]) || buffer[pos_] == ';' ) {
                 ed = pos_;
                 String *p = new String();
                 p->Parse(&buffer[st], ed - st);
                 key.Attach(p);
+
+                if (buffer[pos_] == ';') {
+                    root->Add(key.Detach());
+                }
                 status = START;
             }
             break;
 
         case VALUE:
-            if (!isgraph(buffer[pos_])) {
+            if (!isgraph(buffer[pos_]) || buffer[pos_] == ';') {
                 ed = pos_;
                 String *p = new String();
                 p->Parse(&buffer[st], ed - st);
-                if (val == nullptr)
+                if (val == nullptr) {
                     val.Attach(p);
-                status = START;
+
+                } else if (val->GetType() == ParserObject::Type::ARRAY || 
+                           val->GetType() == ParserObject::Type::BLOCK) {
+                    val->Add(p);
+
+                } else {
+                    Array* pArray = new Array();
+                    pArray->Add(val.Detach());
+                    pArray->Add(p);
+                    val.Attach(pArray);
+                }
+
+                if (buffer[pos_] == ';') {
+                    root->Add(new KVItem(key.Detach(), val.Detach()));
+                    status = START;
+                }
+
             }
         
         case COMMENT:
@@ -164,11 +283,13 @@ int ConfigFileParser::Parse(Status status_, ParserObject* root) {
             break;
         }
 
+        if (buffer[pos_] == '}')
+            return 0;
         ++pos_;
     }
 
 
-
+    return 0;
 }
 
 ParserObject* ConfigFileParser::Get() {

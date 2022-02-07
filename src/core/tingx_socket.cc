@@ -63,6 +63,14 @@ Listen::Listen(int port) : Socket(AF_INET, SOCK_STREAM) {
     listen(fd_, kDefaultListenNum);
 }
 
+void Listen::SetConnectReciveModule(Module* module) {
+    connect_recive_ = module;
+}
+
+Module* Listen::GetConnectReciveModule() {
+    return connect_recive_;
+}
+
 
 Connection::Connection() : Socket() {}
 
@@ -81,6 +89,7 @@ int Connection::Accept(int serv_fd) {
         fd_ = ret;
         is_close_ = false;
     }
+
     return ret;
 }
 
@@ -88,7 +97,12 @@ int Connection::Accept(Listen *listen) {
     if (!is_close_) {
         Close();
     }
-    return Accept(listen->Getfd());
+    int ret = Accept(listen->Getfd());
+    if (ret > 0) {
+        handle_module_ = listen->GetConnectReciveModule();
+    }
+
+    return ret;
 }
 
 

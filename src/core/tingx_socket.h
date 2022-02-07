@@ -5,7 +5,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include "core/tingx_descriptor.hpp"
-
+#include "core/tingx_module.hpp"
 
 namespace tingx {
 
@@ -35,6 +35,11 @@ protected:
 class Listen : public Socket {
 public:
     Listen(int port);
+
+    void SetConnectReciveModule(Module *module);
+    Module* GetConnectReciveModule();
+private:
+    Module* connect_recive_;
 };
 
 class Connection : public Socket {
@@ -43,8 +48,15 @@ public:
     Connection(int fd, struct sockaddr_in &addr);
 
     int Connect();
-    int Accept(int serv_fd);
+
     int Accept(Listen* listen);
+
+private:
+    int Accept(int serv_fd);
+
+
+
+    Module* handle_module_;
 };
 
 }

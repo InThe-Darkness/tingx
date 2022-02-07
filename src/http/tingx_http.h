@@ -10,7 +10,9 @@ public:
     Http(const char *name, ModuleType type);
     virtual ProcessStatus Process(Descriptor* pDescriptor);
 
-
+private:
+    int SendHeader(Descriptor* pDescriptor);
+    int SendBody(Descriptor* pDescriptor);
 };
 
 

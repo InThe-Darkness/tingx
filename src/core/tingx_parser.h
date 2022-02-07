@@ -10,25 +10,15 @@
 namespace tingx {
 
 
-
-class Parser : public RefCounted {
-public:
-    Parser() {}
-    virtual ~Parser() {}
-
-    virtual int Parse() = 0;
-
-};
-
-
 class ParserObject : public RefCounted {
 public:
-    enum Type {Array, Dict, String, Integer};
+    enum Type {ARRAY, BLOCK, STRING, KVITEM};
     ParserObject() {};
     virtual ~ParserObject() {}
-
-    virtual int Parse(const char *pos, int len) = 0;
+    virtual void Add(ParserObject* ) = 0;
     Type GetType() { return type_; }
+
+    static void SerializeOut(ParserObject *root, std::string &buffer, int indent = 0);
 
 protected:
     Type type_;
@@ -37,8 +27,7 @@ protected:
 
 
 using ArrayObj = std::vector<Ptr<ParserObject>>;
-using IntegerObj = long long;
-using DictObj = std::map<std::string, Ptr<ParserObject>>;
+using BlockObj = ArrayObj;//std::map<std::string, Ptr<ParserObject>>;
 using StringObj = std::string;
 
 
@@ -54,47 +43,66 @@ private:
 };
 
 
-class Dict : public ParserObject {
+class Block : public ParserObject {
 public:
-    Dict();
-    void Add(const std::string& key, ParserObject* val);
-    DictObj& Get();
+    Block();
+    void Add(ParserObject *val);
+    BlockObj& Get();
     virtual int Parse(const char *pos, int len);
 
 private:
-    DictObj obj_;
+    BlockObj obj_;
+};
+
+// Key-Value Item
+class KVItem : public ParserObject {
+public:
+    KVItem();
+    KVItem(ParserObject* key, ParserObject *val);
+    void Add(ParserObject* val);
+
+    Ptr<ParserObject> first;
+    Ptr<ParserObject> second;
+
 };
 
 class String : public ParserObject {
 public:
     String();
+
+    // this function do nothing
+    void Add(ParserObject*);
     StringObj& Get();
     virtual int Parse(const char *pos, int len);
 private:
     StringObj obj_;
 };
 
-class Integer : public ParserObject {
+
+
+class Parser : public RefCounted {
 public:
-    Integer();
-    IntegerObj Get();
-    virtual int Parse(const char *pos, int len);
-private:
-    IntegerObj obj_;
+    Parser() {}
+    virtual ~Parser() {}
+
+    virtual int Parse() = 0;
+
 };
 
 class ConfigFileParser : public Parser {
 public:
-    enum Status {START = 0, KEY, VALUE, COMMENT};
+    enum Status {START = 0, KEY, VALUE, COMMENT, BLOCK_START, BLOCKING, BLOCK_DONE};
 
+    ConfigFileParser(const char *filename);
+    ConfigFileParser(std::string &&filename);
     ConfigFileParser(std::string &filename);
     bool GetIsOpen();
     virtual int Parse();
-    virtual int Parse(Status status, ParserObject* root);
+    int Parse(Status status, ParserObject* root);
     ParserObject* Get();
 
 private:
-    
+    void Init();
 
     std::string filename_;
     bool is_open_;

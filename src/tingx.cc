@@ -1,17 +1,7 @@
-#include<unistd.h>
-#include<sys/socket.h>
-#include<sys/epoll.h>
-#include<arpa/inet.h>
 #include<signal.h>
-#include<strings.h>
-#include<stdio.h>
 
 #include<iostream>
-#include<vector>
-#include<algorithm>
-#include<map>
 
-#include "core/tingx_descriptor.hpp"
 #include "core/tingx_socket.h"
 #include "core/tingx_epoll.h"
 #include "core/tingx_cycle.h"
@@ -49,7 +39,7 @@ int main() {
             Socket* pDescriptor = static_cast<Socket*>(on_ready[i].data.ptr);
             if (core_cycle.IsOnListen(pDescriptor)) {
                 Ptr<Connection> pConn{new Connection()};
-                pConn->Accept(pDescriptor->Getfd());
+                pConn->Accept(static_cast<Listen*>(pDescriptor));
                 cout << "connect from: " << pConn->GetIpStr() << endl;
 
                 epoll.Add(pConn, EpollEvent::Read);
