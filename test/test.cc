@@ -22,7 +22,7 @@ int main() {
 
 
     ConfigFileParser parser("../conf/tingx.conf");
-    /*
+    
     parser.Parse();
 
     ParserObject* obj = parser.Get();
@@ -30,6 +30,6 @@ int main() {
     ParserObject::SerializeOut(obj, conf_buffer);
 
     cout << conf_buffer << endl;
-    */
+    
     return 0;
 }
