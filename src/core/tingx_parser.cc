@@ -141,15 +141,15 @@ int String::Parse(const char *pos, int len) {
 
 
 // ------------------------- ConfigFileParser --------------------------
-ConfigFileParser::ConfigFileParser(const char *filename) {
-    ConfigFileParser(std::string(filename));
-}
+// ConfigFileParser::ConfigFileParser(const char *filename) {
+//     ConfigFileParser(std::string(filename));
+// }
 
 ConfigFileParser::ConfigFileParser(std::string &&filename) : filename_(filename) {
     Init();
 }
 
-ConfigFileParser::ConfigFileParser(std::string& filename) : filename_(filename) {
+ConfigFileParser::ConfigFileParser(const std::string& filename) : filename_(filename) {
     Init();
 }
 
@@ -171,7 +171,7 @@ void ConfigFileParser::Init() {
     char c;
     infile.get(c);
     while (!infile.eof()) {
-        buffer.push_back(c);
+        buffer_.push_back(c);
         infile.get(c);
     }
     infile.close();
@@ -194,22 +194,23 @@ int ConfigFileParser::Parse(Status status_, ParserObject* root) {
     Status status = status_;
     Ptr<ParserObject> key, val;
     int st, ed;
-    while (pos_ < buffer.length()) {
-        if (buffer[pos_] == '#') {
+    while (pos_ < buffer_.length()) {
+        char c = buffer_[pos_];
+        if (c == '#') {
             Parse(COMMENT, root);
             ++pos_;
         }
 
         switch (status) {
         case START:
-            if (isgraph(buffer[pos_]) && buffer[pos_] != ';') {
+            if (isgraph(c) && c != ';') {
                 st = pos_;
                 if (key == nullptr) {
                     status = KEY;
                 }
                 else {
                     status = VALUE;
-                    if (buffer[pos_] == '{') {
+                    if (c == '{') {
                         ++pos_;
                         if (val == nullptr) {
                             val.Attach(new Block());
@@ -236,13 +237,13 @@ int ConfigFileParser::Parse(Status status_, ParserObject* root) {
             break;
 
         case KEY:
-            if (!isgraph(buffer[pos_]) || buffer[pos_] == ';' ) {
+            if (!isgraph(c) || c == ';' ) {
                 ed = pos_;
                 String *p = new String();
-                p->Parse(&buffer[st], ed - st);
+                p->Parse(&buffer_[st], ed - st);
                 key.Attach(p);
 
-                if (buffer[pos_] == ';') {
+                if (c == ';') {
                     root->Add(key.Detach());
                 }
                 status = START;
@@ -250,10 +251,10 @@ int ConfigFileParser::Parse(Status status_, ParserObject* root) {
             break;
 
         case VALUE:
-            if (!isgraph(buffer[pos_]) || buffer[pos_] == ';') {
+            if (!isgraph(c) || c == ';') {
                 ed = pos_;
                 String *p = new String();
-                p->Parse(&buffer[st], ed - st);
+                p->Parse(&buffer_[st], ed - st);
                 if (val == nullptr) {
                     val.Attach(p);
 
@@ -268,7 +269,7 @@ int ConfigFileParser::Parse(Status status_, ParserObject* root) {
                     val.Attach(pArray);
                 }
 
-                if (buffer[pos_] == ';') {
+                if (c == ';') {
                     root->Add(new KVItem(key.Detach(), val.Detach()));
                     status = START;
                 }
@@ -276,14 +277,14 @@ int ConfigFileParser::Parse(Status status_, ParserObject* root) {
             }
         
         case COMMENT:
-            if (buffer[pos_] == '\n')
+            if (c == '\n')
                 return 0;
             break;
         default:
             break;
         }
 
-        if (buffer[pos_] == '}')
+        if (c == '}')
             return 0;
         ++pos_;
     }

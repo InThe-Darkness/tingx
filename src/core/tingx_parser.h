@@ -93,9 +93,9 @@ class ConfigFileParser : public Parser {
 public:
     enum Status {START = 0, KEY, VALUE, COMMENT, BLOCK_START, BLOCKING, BLOCK_DONE};
 
-    ConfigFileParser(const char *filename);
+    //ConfigFileParser(const char *filename);
     ConfigFileParser(std::string &&filename);
-    ConfigFileParser(std::string &filename);
+    ConfigFileParser(const std::string &filename);
     bool GetIsOpen();
     virtual int Parse();
     int Parse(Status status, ParserObject* root);
@@ -107,7 +107,7 @@ private:
     std::string filename_;
     bool is_open_;
     int pos_;
-    std::string buffer;
+    std::string buffer_;
     Ptr<ParserObject> root_;
 };
 
