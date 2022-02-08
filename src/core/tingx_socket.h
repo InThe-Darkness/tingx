@@ -48,8 +48,9 @@ public:
     Connection(int fd, struct sockaddr_in &addr);
 
     int Connect();
-
     int Accept(Listen* listen);
+    void SetHandlModule(Module* m) { handle_module_ = m; }
+    Module* GetHandlModule() { return handle_module_; }
 
 private:
     int Accept(int serv_fd);

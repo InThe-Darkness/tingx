@@ -5,9 +5,9 @@
 
 namespace tingx {
 
-class Http : public Module {
+class HttpModule : public Module {
 public:
-    Http(const char *name, ModuleType type);
+    HttpModule(const char *name, ModuleType type, std::vector<Command>* com);
     virtual ProcessStatus Process(Descriptor* pDescriptor);
 
 private:

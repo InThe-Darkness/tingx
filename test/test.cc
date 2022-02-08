@@ -4,6 +4,7 @@
 #include <vector>
 #include <sys/stat.h>
 #include <fstream>
+#include <map>
 
 using namespace tingx;
 using namespace std;
@@ -28,6 +29,10 @@ int main() {
     ParserObject* obj = parser.Get();
     string conf_buffer;
     ParserObject::SerializeOut(obj, conf_buffer);
+
+    map<int, int> m;
+    m[1] = 2;
+    cout << m[1] << " " << m[2] << endl;
 
     cout << conf_buffer << endl;
     

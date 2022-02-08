@@ -13,14 +13,27 @@ namespace tingx {
 class ParserObject : public RefCounted {
 public:
     enum Type {ARRAY, BLOCK, STRING, KVITEM};
-    ParserObject() {};
+    ParserObject() : parent_(nullptr) {};
     virtual ~ParserObject() {}
     virtual void Add(ParserObject* ) = 0;
     Type GetType() { return type_; }
 
-    static void SerializeOut(ParserObject *root, std::string &buffer, int indent = 0);
+    void SetParent(ParserObject* parent) { parent_ = parent; }
+    ParserObject* GetParent() { return parent_; }
 
+    void SetCatched(bool val) { catched_ = val; }
+    bool GetCatched() { return catched_; }
+
+    static void SerializeOut(ParserObject *root, std::string &buffer, int indent = 0);
+    static ParserObject* GetRoot(ParserObject* obj);
+    template<typename T>
+    static T* BuildInstance(ParserObject *parent) {
+        T* obj = new T();
+        static_cast<ParserObject*>(obj)->SetParent(parent);
+        return obj;
+    }
 protected:
+    ParserObject* parent_;
     Type type_;
     bool catched_ = false;
 };

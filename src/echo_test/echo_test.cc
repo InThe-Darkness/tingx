@@ -5,17 +5,18 @@
 
 using namespace tingx;
 
-class EchoTest : public Module {
+class EchoTestModule : public Module {
 public:
-    EchoTest(const char *name, ModuleType type);
+    EchoTestModule(const char *name, ModuleType type, std::vector<Command>* com);
     virtual ProcessStatus Process(Descriptor* pDescriptor);
 };
 
-EchoTest::EchoTest(const char *name, ModuleType type) : Module(std::string(name), type) {
+EchoTestModule::EchoTestModule(const char *name, ModuleType type, std::vector<Command>* com) : 
+        Module(name, type, com) {
     tingx_modules.push_back(this);
 }
 
-ProcessStatus EchoTest::Process(Descriptor* pDescriptor) {
+ProcessStatus EchoTestModule::Process(Descriptor* pDescriptor) {
     std::string recvbuf(1024, 0);
     Socket* pSocket = static_cast<Socket*>(pDescriptor);
     int n = read(pSocket->Getfd(), &recvbuf[0], recvbuf.length());
@@ -28,17 +29,9 @@ ProcessStatus EchoTest::Process(Descriptor* pDescriptor) {
         for (int i = 0; i < n; i++)
             std::cout << recvbuf[i];
         std::cout << std::endl;
-
-        std::string send_buffer(
-            "HTTP/1.1 200 OK\r\n"
-            "Content-Length: 33\r\n"
-            "Content-Type: text/html\r\n"
-            "\r\n"
-            "<html><h1>hello world</h1></html>"
-        );
-        write(pSocket->Getfd(), &send_buffer[0], send_buffer.length());
+        write(pSocket->Getfd(), &recvbuf[0], recvbuf.length());
     }
     return OK;
 }
 
-EchoTest echo_tes("EchoTest", ModuleType::NORMAL);
+EchoTestModule echo_tes_module("EchoTest", ModuleType::NORMAL, nullptr);

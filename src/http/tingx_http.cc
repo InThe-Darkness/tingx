@@ -4,11 +4,12 @@
 #include <iostream>
 namespace tingx {
 
-Http::Http(const char *name, ModuleType type) : Module(std::string(name), type) {
-    //tingx_modules.push_back(this);
+HttpModule::HttpModule(const char *name, ModuleType type, std::vector<Command>* com) :
+        Module(std::string(name), type, com) {
+    tingx_modules.push_back(this);
 }
 
-ProcessStatus Http::Process(Descriptor* pDescriptor) {
+ProcessStatus HttpModule::Process(Descriptor* pDescriptor) {
     std::string recvbuf(1024, 0);
     Socket* pSocket = static_cast<Socket*>(pDescriptor);
     int n = read(pSocket->Getfd(), &recvbuf[0], recvbuf.length());
@@ -28,6 +29,8 @@ ProcessStatus Http::Process(Descriptor* pDescriptor) {
     }
     return CLOSE;
 }
+
+HttpModule http_module("http", ModuleType::CORE, nullptr);
 
 
 }

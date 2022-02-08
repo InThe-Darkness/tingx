@@ -9,13 +9,14 @@ namespace tingx {
 void ParserObject::SerializeOut(ParserObject *root, std::string &buffer, int indent) {
     if (root->GetType() == Type::STRING) {
         if (indent) {
-            buffer.append(std::string(' ', indent));
+            buffer.append(std::string(indent, ' '));
         }
         buffer.append(static_cast<String*>(root)->Get());
+        buffer.push_back(';');
         buffer.push_back('\n');
         return;
     } else if (root->GetType() == Type::KVITEM) {
-        buffer.append(std::string(' ', indent));
+        buffer.append(std::string(indent, ' '));
         KVItem *p = static_cast<KVItem*>(root);
         buffer.append(static_cast<String*>(p->first.Get())->Get());
         buffer.push_back(' ');
@@ -32,9 +33,10 @@ void ParserObject::SerializeOut(ParserObject *root, std::string &buffer, int ind
                     buffer.push_back(' ');
                 }
             }
+            buffer.push_back(';');
             buffer.push_back('\n');
             if (obj.back()->GetType() == Type::BLOCK) {
-                buffer.append(std::string(' ', indent));
+                buffer.append(std::string(indent, ' '));
                 buffer.push_back('}');
                 buffer.push_back('\n');
             }
@@ -42,20 +44,30 @@ void ParserObject::SerializeOut(ParserObject *root, std::string &buffer, int ind
             buffer.push_back('{');
             buffer.push_back('\n');
             SerializeOut(p->second, buffer, indent + 4);
-            buffer.append(std::string(' ', indent));
+            buffer.append(std::string(indent, ' '));
             buffer.push_back('}');
             buffer.push_back('\n');
         } else {
             buffer.append(static_cast<String*>(p->second.Get())->Get());
+            buffer.push_back(';');
             buffer.push_back('\n');
         }
     } else { // BLOCK
         Block* pBlock = static_cast<Block*>(root);
         BlockObj& obj = pBlock->Get();
         for (auto iter : obj) {
-            SerializeOut(iter, buffer, indent + 4);
+            SerializeOut(iter, buffer, indent);
         }
     }
+}
+
+ParserObject* ParserObject::GetRoot(ParserObject *obj) {
+    ParserObject* root = obj->parent_;
+    while (root && root->parent_ != nullptr) {
+        obj = root;
+        root = root->parent_;
+    }
+    return obj;
 }
 
 
@@ -213,24 +225,29 @@ int ConfigFileParser::Parse(Status status_, ParserObject* root) {
                     if (c == '{') {
                         ++pos_;
                         if (val == nullptr) {
-                            val.Attach(new Block());
+                            val.Attach(ParserObject::BuildInstance<Block>(key));
                             Parse(START, val);
 
                         } else if (val->GetType() == ParserObject::Type::ARRAY) {
-                            Ptr<ParserObject> p(new Block());
+                            Ptr<ParserObject> p(ParserObject::BuildInstance<Block>(key));
                             static_cast<Array*>(val.Get())->Add(p);
                             Parse(START, p);
 
                         } else {
-                            Ptr<ParserObject> pBlock(new Block());
-                            Ptr<ParserObject> pArray(new Array());
+                            Ptr<ParserObject> pArray(ParserObject::BuildInstance<Array>(key));
+                            Ptr<ParserObject> pBlock(ParserObject::BuildInstance<Block>(pArray));
                             static_cast<Array*>(pArray.Get())->Add(val);
+                            val->SetParent(pArray);
                             static_cast<Array*>(pArray.Get())->Add(pBlock);
                             val.Attach(pArray.Detach());
                             Parse(START, pBlock);
 
                         }
-                        root->Add(new KVItem(key.Detach(), val.Detach()));
+                        KVItem* pKVItem = ParserObject::BuildInstance<KVItem>(root);
+                        pKVItem->Add(key.Detach());
+                        pKVItem->Add(val.Detach());
+                        root->Add(pKVItem);
+                        status = START;
                     }
                 }
             }
@@ -239,7 +256,7 @@ int ConfigFileParser::Parse(Status status_, ParserObject* root) {
         case KEY:
             if (!isgraph(c) || c == ';' ) {
                 ed = pos_;
-                String *p = new String();
+                String *p = ParserObject::BuildInstance<String>(root);
                 p->Parse(&buffer_[st], ed - st);
                 key.Attach(p);
 
@@ -253,7 +270,7 @@ int ConfigFileParser::Parse(Status status_, ParserObject* root) {
         case VALUE:
             if (!isgraph(c) || c == ';') {
                 ed = pos_;
-                String *p = new String();
+                String *p = ParserObject::BuildInstance<String>(key);
                 p->Parse(&buffer_[st], ed - st);
                 if (val == nullptr) {
                     val.Attach(p);

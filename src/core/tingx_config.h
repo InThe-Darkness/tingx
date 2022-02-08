@@ -14,6 +14,8 @@ extern const int kDefaultEpollTimeOut; // 100ms
 
 extern std::vector<Module*>tingx_modules;
 
+extern const char *conf_file;
+
 }
 
 
