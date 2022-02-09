@@ -259,7 +259,7 @@ public:
         if (root == obj) {
             conn_recv_module_index = 0;
         } else {
-            String* pString = static_cast<String*>(static_cast<KVItem*>(root)->first.Get());
+            String* pString = static_cast<String*>(root);
             conn_recv_module_index = real->GetName2Index()[pString->Get()];
         }
         

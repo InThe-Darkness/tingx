@@ -229,7 +229,7 @@ int ConfigFileParser::Parse(Status status_, ParserObject* root) {
                             Parse(START, val);
 
                         } else if (val->GetType() == ParserObject::Type::ARRAY) {
-                            Ptr<ParserObject> p(ParserObject::BuildInstance<Block>(key));
+                            Ptr<ParserObject> p(ParserObject::BuildInstance<Block>(val));
                             static_cast<Array*>(val.Get())->Add(p);
                             Parse(START, p);
 
@@ -280,14 +280,19 @@ int ConfigFileParser::Parse(Status status_, ParserObject* root) {
                     val->Add(p);
 
                 } else {
-                    Array* pArray = new Array();
+                    Array* pArray = ParserObject::BuildInstance<Array>(key);
+                    val->SetParent(pArray);
                     pArray->Add(val.Detach());
                     pArray->Add(p);
                     val.Attach(pArray);
                 }
 
                 if (c == ';') {
-                    root->Add(new KVItem(key.Detach(), val.Detach()));
+                    KVItem* pKVItem = ParserObject::BuildInstance<KVItem>(root);
+                    key->SetParent(pKVItem);
+                    pKVItem->Add(key.Detach());
+                    pKVItem->Add(val.Detach());
+                    root->Add(pKVItem);
                     status = START;
                 }
 
