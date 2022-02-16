@@ -57,6 +57,9 @@ public:
     int GetIndex() { return index_; }
     void SetIndex(int index) { index_ = index; }
 
+    std::string &GetWorkDir() { return working_directory_; }
+    void SetWorkDir(std::string& str) { working_directory_ = str; }
+
     std::vector<Command>* GetCommands() { return commands_; }
 
     static int GetIndex(const std::vector<Module*>& con, const char *name)  {
@@ -77,6 +80,7 @@ protected:
     std::string name_;
     ModuleType type_;
     int index_;
+    std::string working_directory_;
 };
 
 

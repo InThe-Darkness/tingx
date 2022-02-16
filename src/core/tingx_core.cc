@@ -242,37 +242,48 @@ void CoreModule::MainLoop() {
 }
 
 
-class ListenCommandHandler : public ModuleCommandHandler {
-public:
-    int operator()(Module* pModule, ParserObject* obj) {
-        CoreModule *real = static_cast<CoreModule*>(pModule);
-        KVItem *pKVItem = static_cast<KVItem*>(obj);
-        String* pString = static_cast<String*>(pKVItem->second.Get());
-        if (pString == nullptr) 
-            return -1;
+static int ListenCommandHandler(Module* pModule, ParserObject* obj) {
+    CoreModule *real = static_cast<CoreModule*>(pModule);
+    KVItem *pKVItem = static_cast<KVItem*>(obj);
+    String* pString = static_cast<String*>(pKVItem->second.Get());
+    if (pString == nullptr) 
+        return -1;
 
-        int port = atoi(pString->Get().c_str());
-        real->AddPort(port);
+    int port = atoi(pString->Get().c_str());
+    real->AddPort(port);
 
-        ParserObject* root = ParserObject::GetRoot(obj);
-        int conn_recv_module_index = 0;
-        if (root == obj) {
-            conn_recv_module_index = 0;
-        } else {
-            String* pString = static_cast<String*>(root);
-            conn_recv_module_index = real->GetName2Index()[pString->Get()];
-        }
-        
-        real->GetPort2Index().insert(std::make_pair(port, conn_recv_module_index));
-
-        std::cout << "port:" << port << " module:" << tingx_modules[conn_recv_module_index]->GetName() << std::endl;
-
-        return 0;
+    ParserObject* root = ParserObject::GetRoot(obj);
+    int conn_recv_module_index = 0;
+    if (root == obj) {
+        conn_recv_module_index = 0;
+    } else {
+        String* pString = static_cast<String*>(root);
+        conn_recv_module_index = real->GetName2Index()[pString->Get()];
     }
-};
+    
+    real->GetPort2Index().insert(std::make_pair(port, conn_recv_module_index));
+
+    return 0;
+}
+
+static int RootCommandHandler(Module* pModule, ParserObject* obj) {
+    CoreModule *real = static_cast<CoreModule*>(pModule);
+    KVItem *pKVItem = static_cast<KVItem*>(obj);
+    String* pRootDir = static_cast<String*>(pKVItem->second.Get());
+    if (pRootDir == nullptr) 
+        return -1;
+
+    ParserObject* root = ParserObject::GetRoot(obj);
+    String* pString = static_cast<String*>(root);
+    int model_index = real->GetName2Index()[pString->Get()];
+    
+
+    return 0;
+}
 
 std::vector<Command> core_module_commands {
-    Command{ std::string("listen"), 1, ListenCommandHandler() },
+    Command{ std::string("listen"), 1, ListenCommandHandler },
+    Command{ std::string("root"), 1, RootCommandHandler },
 };
 
 

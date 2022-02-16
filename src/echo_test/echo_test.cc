@@ -1,6 +1,7 @@
 #include "core/tingx_socket.h"
 #include "core/tingx_config.h"
 #include <iostream>
+#include <sys/socket.h>
 
 
 using namespace tingx;
@@ -19,6 +20,8 @@ EchoTestModule::EchoTestModule(const char *name, ModuleType type, std::vector<Co
 ProcessStatus EchoTestModule::Process(Descriptor* pDescriptor) {
     std::string recvbuf(1024, 0);
     Socket* pSocket = static_cast<Socket*>(pDescriptor);
+    int len = recv(pSocket->Getfd(), nullptr, 0, MSG_PEEK);
+    std::cout << "recived " << len << " bytes form client" << std::endl << recvbuf << std::endl;
     int n = read(pSocket->Getfd(), &recvbuf[0], recvbuf.length());
 
     if (n == 0) {
