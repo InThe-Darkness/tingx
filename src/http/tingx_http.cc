@@ -4,6 +4,52 @@
 #include <iostream>
 namespace tingx {
 
+// ---------------------------- Request -------------------------
+
+Request* HeaderParser(std::string &buffer) {
+    Request* req = new Request();
+    return HeaderParser(buffer, *req);
+}
+
+Request* HeaderParser(std::string &buffer, Request &req) {
+    int i = 0, last = 0;
+    enum Status { METHOD, URL, VERSION, HEADER };
+    Status st = METHOD;
+    while (i < buffer.length()) {
+        while (buffer[i] != ' ') i++;
+
+        switch (st) {
+        case METHOD:
+            req.method_ = buffer.substr(last, i - last);
+            st = URL;
+            break;
+        case URL:
+            req.url_ = buffer.substr(last, i - last);
+            st = VERSION;
+            break;
+        case VERSION:
+            req.version_ = buffer.substr(last, i - last);
+            st = HEADER;
+            break;
+        case HEADER:
+            int ks = last, split = i;
+            while (buffer[i] != '\r') i++;
+            req.header_[buffer.substr(last, split - last)] = buffer.substr(split + 1, i - split - 1);
+            i++;
+            break;
+        }
+        i++;
+        if (buffer[i] == '\r') break;
+    }
+    return &req;
+}
+
+
+
+
+
+
+
 HttpModule::HttpModule(const char *name, ModuleType type, std::vector<Command>* com) :
         Module(std::string(name), type, com) {
     tingx_modules.push_back(this);

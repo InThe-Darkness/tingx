@@ -276,7 +276,7 @@ static int RootCommandHandler(Module* pModule, ParserObject* obj) {
     ParserObject* root = ParserObject::GetRoot(obj);
     String* pString = static_cast<String*>(root);
     int model_index = real->GetName2Index()[pString->Get()];
-    
+    tingx_modules[model_index]->SetWorkDir(pString->Get());
 
     return 0;
 }
