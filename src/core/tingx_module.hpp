@@ -59,7 +59,6 @@ public:
 
     std::string &GetWorkDir() { return working_directory_; }
     void SetWorkDir(std::string &str) { working_directory_ = str; }
-    void SetWorkDir(std::string& str) { working_directory_ = str; }
 
     std::vector<Command>* GetCommands() { return commands_; }
 

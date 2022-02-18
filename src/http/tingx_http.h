@@ -9,8 +9,8 @@ namespace tingx {
 
 class Request {
 public:
-    Request() {]};
-    ~Request() {]};
+    Request() {};
+    ~Request() {};
 
     std::string& operator[](const char *key) { return header_[key]; }
     std::string& operator[](std::string& key) { return header_[key]; };
@@ -23,6 +23,11 @@ public:
     std::string body_buffer_;
 
 };
+
+Request* HeaderParser(std::string &buffer);
+Request* HeaderParser(std::string &buffer, Request &req);
+std::ostream& operator<< (std::ostream &os, Request &req);
+
 
 class Response {
 public:

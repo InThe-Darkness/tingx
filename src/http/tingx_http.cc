@@ -16,7 +16,7 @@ Request* HeaderParser(std::string &buffer, Request &req) {
     enum Status { METHOD, URL, VERSION, HEADER };
     Status st = METHOD;
     while (i < buffer.length()) {
-        while (buffer[i] != ' ') i++;
+        while (buffer[i] != ' ' && buffer[i] != '\r') i++;
 
         switch (st) {
         case METHOD:
@@ -29,23 +29,34 @@ Request* HeaderParser(std::string &buffer, Request &req) {
             break;
         case VERSION:
             req.version_ = buffer.substr(last, i - last);
+            i++; // skip '\n'
             st = HEADER;
             break;
         case HEADER:
             int ks = last, split = i;
             while (buffer[i] != '\r') i++;
             req.header_[buffer.substr(last, split - last)] = buffer.substr(split + 1, i - split - 1);
-            i++;
+            i++; // skip '\n'
             break;
         }
         i++;
+        last = i;
         if (buffer[i] == '\r') break;
     }
     return &req;
 }
 
 
+std::ostream& operator<< (std::ostream &os, Request &req) {
+    os << "Method:" << req.method_ << std::endl;
+    os << "URL:" << req.url_ << std::endl;
+    os << "VERSION:" << req.version_ << std::endl;
 
+    for (auto &iter : req.header_) {
+        os << iter.first << ":" << iter.second << std::endl;
+    }
+    return os;
+}
 
 
 
@@ -59,6 +70,11 @@ ProcessStatus HttpModule::Process(Descriptor* pDescriptor) {
     std::string recvbuf(1024, 0);
     Socket* pSocket = static_cast<Socket*>(pDescriptor);
     int n = read(pSocket->Getfd(), &recvbuf[0], recvbuf.length());
+    recvbuf[n] = '\0';
+
+    Request* req = HeaderParser(recvbuf);
+    std::cout << *req << std::endl;
+    delete req;    
 
     if (n == 0) {
         return CLOSE;
