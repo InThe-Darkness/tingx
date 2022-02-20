@@ -31,9 +31,11 @@ static std::string test_recv_header =
 
 int main() {
 
-    Request *req = HeaderParser(test_recv_header);
-    cout << *req << endl;
-    delete req;
-    
+    //RequestHeader *req = RequestHeader(test_recv_header);
+    //cout << *req << endl;
+    //delete req;
+    struct stat st;
+    stat("../html/index1.html", &st);
+    cout << st.st_size << endl;
     return 0;
 }

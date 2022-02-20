@@ -10,6 +10,8 @@ Socket::Socket() {}
 
 Socket::Socket(int domain, int type) {
     fd_ = socket(domain, type, 0);
+    int opt = 1;
+    setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     is_close_ = false;
     type_ = type;
 }

@@ -241,7 +241,7 @@ void CoreModule::MainLoop() {
 
 }
 
-
+// ---------------------------- Connmand Handler --------------------------------------
 static int ListenCommandHandler(Module* pModule, ParserObject* obj) {
     CoreModule *real = static_cast<CoreModule*>(pModule);
     KVItem *pKVItem = static_cast<KVItem*>(obj);
@@ -276,7 +276,7 @@ static int RootCommandHandler(Module* pModule, ParserObject* obj) {
     ParserObject* root = ParserObject::GetRoot(obj);
     String* pString = static_cast<String*>(root);
     int model_index = real->GetName2Index()[pString->Get()];
-    tingx_modules[model_index]->SetWorkDir(pString->Get());
+    tingx_modules[model_index]->SetWorkDir(pRootDir->Get());
 
     return 0;
 }
