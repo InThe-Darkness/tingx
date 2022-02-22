@@ -1,5 +1,6 @@
 #include "core/tingx_socket.h"
 #include "core/tingx_config.h"
+#include "core/tingx_utilies.h"
 #include <iostream>
 #include <sys/socket.h>
 
@@ -8,14 +9,9 @@ using namespace tingx;
 
 class EchoTestModule : public Module {
 public:
-    EchoTestModule(const char *name, ModuleType type, std::vector<Command>* com);
+    EchoTestModule(const char *name, ModuleType type, std::vector<Command>* com) : Module(name, type, com) { }
     virtual ProcessStatus Process(Descriptor* pDescriptor);
 };
-
-EchoTestModule::EchoTestModule(const char *name, ModuleType type, std::vector<Command>* com) : 
-        Module(name, type, com) {
-    tingx_modules.push_back(this);
-}
 
 ProcessStatus EchoTestModule::Process(Descriptor* pDescriptor) {
     std::string recvbuf(1024, 0);
@@ -37,4 +33,4 @@ ProcessStatus EchoTestModule::Process(Descriptor* pDescriptor) {
     return OK;
 }
 
-EchoTestModule echo_tes_module("EchoTest", ModuleType::NORMAL, nullptr);
+static ModuleRegister<EchoTestModule> echo_test("EchoTest", ModuleType::NORMAL, nullptr);

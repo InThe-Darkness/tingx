@@ -4,8 +4,11 @@
 #include <vector>
 #include <map>
 #include <sys/epoll.h>
+#include <thread>
+#include <queue>
 #include "core/tingx_refcount.hpp"
 #include "core/tingx_module.hpp"
+
 
 namespace tingx {
 
@@ -72,6 +75,8 @@ private:
     std::vector<int> all_port_;
     std::map<int, int> port2index_;
     std::map<std::string, int> name2index_;
+    std::queue<std::thread> thread_pool_;
+    
 
     Cycle core_cycle_;
     Epoll core_epoll_;

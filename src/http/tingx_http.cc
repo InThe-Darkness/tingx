@@ -1,4 +1,5 @@
 #include "core/tingx_socket.h"
+#include "core/tingx_utilies.h"
 #include "core/tingx_config.h"
 #include "http/tingx_http.h"
 #include <iostream>
@@ -153,7 +154,6 @@ int File::GetFileSize() {
 
 HttpModule::HttpModule(const char *name, ModuleType type, std::vector<Command>* com) :
         Module(std::string(name), type, com) {
-    tingx_modules.push_back(this);
 }
 
 ProcessStatus HttpModule::Process(Descriptor* pDescriptor) {
@@ -199,7 +199,7 @@ ProcessStatus HttpModule::Process(Descriptor* pDescriptor) {
     return CLOSE;
 }
 
-HttpModule http_module("http", ModuleType::CORE, nullptr);
+static ModuleRegister<HttpModule> http_module("http", ModuleType::CORE, nullptr);
 
 
 }

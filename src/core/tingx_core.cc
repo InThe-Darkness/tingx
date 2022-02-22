@@ -3,6 +3,7 @@
 #include "core/tingx_descriptor.hpp"
 #include "core/tingx_parser.h"
 #include "core/tingx_socket.h"
+#include "core/tingx_utilies.h"
 
 #include <exception>
 #include <queue>
@@ -92,9 +93,7 @@ std::vector<struct epoll_event>& Epoll::GetEventOnReady() {
 
 
 
-CoreModule::CoreModule(const char *name, ModuleType type, std::vector<Command>* com) : Module(name, type, com) {
-    tingx_modules.push_back(this);
-}
+CoreModule::CoreModule(const char *name, ModuleType type, std::vector<Command>* com) : Module(name, type, com) {}
 
 ProcessStatus CoreModule::Process(Descriptor* pDescriptor) {
     std::string send_buffer("This is core module");
@@ -180,7 +179,7 @@ int CoreModule::Init(ConfigFileParser *parser) {
             if (pString->GetCatched() == false) {
                 CoreConf.push(obj);
             }
-        }
+        }        
     }
 
     while(!CoreConf.empty()) {
@@ -206,6 +205,9 @@ int CoreModule::Init(ConfigFileParser *parser) {
             unresolved.push_back(obj);
     }
 
+    for (int i = 0; i < kDefaultWorkingThread; i++)
+        thread_pool_.push(std::thread());
+
     if (unresolved.size() != 0)
         return -1;
 
@@ -227,6 +229,9 @@ void CoreModule::MainLoop() {
                 core_cycle_.AddOpen(pConn);
             } else {
                 Connection* pConn = static_cast<Connection*>(pDescriptor);
+                std::thread &t = thread_pool_.front();
+                thread_pool_.pop();
+                
                 ProcessStatus status = pConn->GetHandlModule()->Process(pConn);
                 if (status == CLOSE) {
                     core_epoll_.Del(pDescriptor);
@@ -288,7 +293,7 @@ std::vector<Command> core_module_commands {
 
 
 
-CoreModule core_module("core", ModuleType::CORE, &core_module_commands);
+static ModuleRegister<CoreModule> core_module("core", ModuleType::CORE, &core_module_commands);
 
 
 }

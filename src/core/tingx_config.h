@@ -6,11 +6,12 @@
 
 namespace tingx {
 
-extern const int kDefaultListenNum;
+extern int kDefaultListenNum;
 
-extern const int kDefaultMaxEpollEvent;
+extern int kDefaultMaxEpollEvent;
 
-extern const int kDefaultEpollTimeOut; // 100ms
+extern int kDefaultEpollTimeOut; // 100ms
+extern int kDefaultWorkingThread;
 
 extern std::vector<Module*>tingx_modules;
 

@@ -3,11 +3,13 @@
 namespace tingx {
 
 
-const int kDefaultListenNum = 10;
+int kDefaultListenNum = 10;
 
-const int kDefaultMaxEpollEvent = 100;
+int kDefaultMaxEpollEvent = 100;
 
-const int kDefaultEpollTimeOut = 100; // 100ms
+int kDefaultEpollTimeOut = 100; // 100ms
+
+int kDefaultWorkingThread = 20;
 
 std::vector<Module*>tingx_modules;
 
