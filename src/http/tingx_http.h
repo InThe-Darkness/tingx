@@ -47,6 +47,7 @@ std::ostream& operator<< (std::ostream &os, RequestHeader &req);
 
 class ResponseHeader : public Header {
 public:
+    ResponseHeader() : version("HTTP/1.1") {}
     std::string& SerializeOut(std::string &buffer);
 
     static ResponseHeader* BuildDefaultResponseHeader(RequestHeader *req);
@@ -59,8 +60,30 @@ public:
 
 };
 
-RequestHeader* RequestParser(std::string &buffer);
-RequestHeader* RequestParser(std::string &buffer, RequestHeader &req);
+class Request : public RefCounted {
+public:
+    RequestHeader header;
+    std::string body;
+};
+
+
+class Response : public RefCounted {
+public:
+    Response(ResponseHeader *header_) : header(*header_) {} 
+
+    static Response* BuildDefault() {
+        Ptr<Response> res = new Response(ResponseHeader::BuildDefaultResponseHeader(nullptr));
+        return res.Detach();
+    }
+
+    ResponseHeader header;
+    std::string body;
+};
+
+
+Request* RequestParser(std::string &buffer);
+
+int Send(Descriptor *pDescriptor, Response *response);
 
 
 
@@ -87,7 +110,7 @@ public:
     HttpModule(const char *name, ModuleType type, std::vector<Command>* com);
     virtual ProcessStatus Process(Descriptor* pDescriptor);
 
-private:
+protected:
     int SendHeader(Descriptor* pDescriptor);
     int SendBody(Descriptor* pDescriptor);
 };

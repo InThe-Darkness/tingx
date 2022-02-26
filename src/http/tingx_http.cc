@@ -37,7 +37,9 @@ std::string& RequestHeader::SerializeOut(std::string &buffer) {
 
 std::map<int, const char *> ResponseHeader::ReasonPhrase {
     {200, "OK"},
-    {404, "ERROR"},
+    {202, "Accept"},
+    {403, "Forbiden"},
+    {404, "Not Found"},
     {500, "ERROR"}
 };
 
@@ -53,45 +55,56 @@ std::string& ResponseHeader::SerializeOut(std::string &buffer) {
 }
 
 
-RequestHeader* RequestParser(std::string &buffer) {
-    Ptr<RequestHeader> req = new RequestHeader();
-    RequestParser(buffer, *req);
-    return req.Detach();
-}
-
-RequestHeader* RequestParser(std::string &buffer, RequestHeader &req) {
+Request* RequestParser(std::string &buffer) {
+    Request *request = new Request();
+    RequestHeader &header = request->header;
     int i = 0, last = 0;
-    enum Status { METHOD, URL, VERSION, HEADER };
+    enum Status { METHOD, URL, VERSION, HEADER_KEY, HEADER_VAL };
+
+    while(buffer[i] == ' ') i++;
+    last = i;
     Status st = METHOD;
+    std::string key, val;
     while (i < buffer.length()) {
-        while (buffer[i] != ' ' && buffer[i] != '\r') i++;
 
         switch (st) {
         case METHOD:
-            req.method = buffer.substr(last, i - last);
+            while (buffer[i] != ' ') i++;
+            header.method = buffer.substr(last, i - last);
             st = URL;
             break;
         case URL:
-            req.url = buffer.substr(last, i - last);
+            while (buffer[i] != ' ') i++;
+            header.url = buffer.substr(last, i - last);
             st = VERSION;
             break;
         case VERSION:
-            req.version = buffer.substr(last, i - last);
-            i++; // skip '\n'
-            st = HEADER;
-            break;
-        case HEADER:
-            int ks = last, split = i;
             while (buffer[i] != '\r') i++;
-            req.header[buffer.substr(last, split - last)] = buffer.substr(split + 1, i - split - 1);
+            header.version = buffer.substr(last, i - last);
             i++; // skip '\n'
+            st = HEADER_KEY;
             break;
+        case HEADER_KEY:
+            while (buffer[i] != ':' && buffer[i] != ' ') i++;
+            key = buffer.substr(last, i - last);
+            st = HEADER_VAL;
+            while(buffer[i] == ':' || buffer[i] == ' ') i++;
+            i--;
+            break;
+        case HEADER_VAL:
+            while (buffer[i] != '\r') i++;
+            val = buffer.substr(last, i - last);
+            header[key] = val;
+            i++; // skip '\n'
+            st = HEADER_KEY;
         }
         i++;
         last = i;
-        if (buffer[i] == '\r') break;
+        if (buffer[i] == '\r' && buffer[i + 1] == '\n') break;
     }
-    return &req;
+    i += 2;
+    request->body = buffer.substr(i);
+    return request;
 }
 
 
@@ -110,7 +123,13 @@ std::ostream& operator<< (std::ostream &os, RequestHeader &req) {
 ResponseHeader* ResponseHeader::BuildDefaultResponseHeader(RequestHeader *req) {
     Ptr<ResponseHeader> pRes {new ResponseHeader()};
     pRes->version = "HTTP/1.1";
+    (*pRes)["Server"] = "tingx/0.0.1";
+    (*pRes)["Connection"] = "close";
+
     pRes->status_code = 200;
+    if (req == nullptr)
+        return pRes.Detach();
+
     if (StringTool::EndWith(req->url, ".html"))
         (*pRes)["Content-Type"] = "text/html";
     else if (StringTool::EndWith(req->url, ".js"))
@@ -121,6 +140,25 @@ ResponseHeader* ResponseHeader::BuildDefaultResponseHeader(RequestHeader *req) {
         (*pRes)["Content-Type"] = "text/plain";
     return pRes.Detach();
 }
+
+
+int Send(Descriptor *pDescriptor, Response *response) {
+    if (pDescriptor == nullptr || response == nullptr)
+        return 0;
+        
+    std::string header_buffer;
+    response->header.SerializeOut(header_buffer);
+    int n, send = 0;
+    n = write(*pDescriptor, &header_buffer[0], header_buffer.length());
+    send += n;
+    if (response->body.length() != 0) {
+        n = write(*pDescriptor, &response->body[0], response->body.length());
+        send += n;
+    }
+    return n;
+}
+
+
 
 
 File::File(const char *filename) {
@@ -163,40 +201,38 @@ HttpModule::HttpModule(const char *name, ModuleType type, std::vector<Command>* 
 }
 
 ProcessStatus HttpModule::Process(Descriptor* pDescriptor) {
-    std::string recvbuf(1024, 0);
-    Socket* pSocket = static_cast<Socket*>(pDescriptor);
-    int n = read(pSocket->Getfd(), &recvbuf[0], recvbuf.length());
-    recvbuf[n] = '\0';
+    std::string recvbuf;
+    int n = Reader::Read(recvbuf, pDescriptor);
 
     if (n == 0) {
         return CLOSE;
     } else {
-        Ptr<RequestHeader> req = RequestParser(recvbuf);
-    
+        Ptr<Request> req = RequestParser(recvbuf);
+        std::string &url = req->header.url;
 
         std::string content_file = working_directory_;
-        if (req->url.length() == 1 && req->url[0] == '/')
-            req->url = std::string("/index.html");
+        if (url.length() == 1 && url[0] == '/')
+            url = std::string("/index.html");
         
-        content_file.append(req->url);
+        content_file.append(url);
 
-        Ptr<ResponseHeader> pRes = ResponseHeader::BuildDefaultResponseHeader(req);
+        Ptr<ResponseHeader> pRes = ResponseHeader::BuildDefaultResponseHeader(&req->header);
         File content(content_file);
         if (content.IsOpen()) {
             pRes->Insert("Content-Length", std::to_string(content.GetFileSize()));
             std::string send_buffer;
             pRes->SerializeOut(send_buffer);
-            write(pSocket->Getfd(), &send_buffer[0], send_buffer.length());
+            write(pDescriptor->Getfd(), &send_buffer[0], send_buffer.length());
             
             std::string content_buffer(content.GetFileSize(), 0);
             content.Read(content_buffer, -1);
-            write(pSocket->Getfd(), &content_buffer[0], content_buffer.length());
+            write(pDescriptor->Getfd(), &content_buffer[0], content_buffer.length());
         } else {
             pRes->status_code = 404;
 //            pRes->Insert("Content-Length", 0);
             std::string send_buffer;
             pRes->SerializeOut(send_buffer);
-            write(pSocket->Getfd(), &send_buffer[0], send_buffer.length());
+            write(pDescriptor->Getfd(), &send_buffer[0], send_buffer.length());
         }
 
         

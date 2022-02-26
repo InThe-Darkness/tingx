@@ -26,19 +26,16 @@ static std::string test_recv_header =
 "Sec-Fetch-User: ?1\r\n"
 "Sec-Fetch-Dest: document\r\n"
 "Accept-Encoding: gzip, deflate, br\r\n"
-"Accept-Language::en-US,en;q=0.9\r\n"
-"\r\n";
+"Accept-Language: en-US,en;q=0.9\r\n"
+"\r\n"
+"Hello world";
 
 int main() {
 
-    //RequestHeader *req = RequestHeader(test_recv_header);
-    //cout << *req << endl;
-    //delete req;
-    struct stat st;
-    stat("../html/index1.html", &st);
-    cout << st.st_size << endl;
-
-    string str("");
-    cout << str.length() << endl;
+    Request *req = RequestParser(test_recv_header);
+    cout << req->header << endl;
+    cout << "body:" << req->body << endl;
+    cout << "host: " << req->header["Host"] << endl;
+    delete req;
     return 0;
 }

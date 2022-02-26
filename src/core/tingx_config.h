@@ -12,6 +12,7 @@ extern int kDefaultMaxEpollEvent;
 
 extern int kDefaultEpollTimeOut; // 100ms
 extern int kDefaultWorkingThread;
+extern int kDefaultReadTimeout;
 
 extern std::vector<Module*>tingx_modules;
 

@@ -38,11 +38,16 @@ public:
 
 class Reader {
 public:
-    Reader();
+    Reader() : pDescriptor(nullptr) {};
+    Reader(Descriptor *p) : pDescriptor(p) {}
+    int Read(Descriptor *p);
+    int Read();
 
-
+    static int Read(std::string &buffer, Descriptor *pDescriptor);
+    std::string *GetBuffer() { return &buffer_; }
 private:
-    std::string buffer;
+    std::string buffer_;
+    Descriptor *pDescriptor;
 };
 
 }
