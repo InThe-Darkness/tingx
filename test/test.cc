@@ -37,5 +37,8 @@ int main() {
     struct stat st;
     stat("../html/index1.html", &st);
     cout << st.st_size << endl;
+
+    string str("");
+    cout << str.length() << endl;
     return 0;
 }

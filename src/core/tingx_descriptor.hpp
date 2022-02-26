@@ -36,6 +36,8 @@ public:
         return fd == fd_;
     }
 
+    operator int() const { return fd_; }
+
 protected:
     int fd_;
     bool is_close_;

@@ -49,7 +49,7 @@ class ResponseHeader : public Header {
 public:
     std::string& SerializeOut(std::string &buffer);
 
-    static ResponseHeader* BuildDefaultResponseHeader();
+    static ResponseHeader* BuildDefaultResponseHeader(RequestHeader *req);
 
 public:
     std::string version;

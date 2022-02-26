@@ -29,6 +29,13 @@ private:
     T *module_;
 };
 
+class StringTool {
+public:
+    static bool EndWith(const std::string& str1, const std::string &end);
+    static bool EndWith(const std::string& str1, const char *end);
+    static std::string GetFileType(const std::string &str1);
+};
+
 class Reader {
 public:
     Reader();

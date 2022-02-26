@@ -15,20 +15,12 @@ public:
 
 ProcessStatus EchoTestModule::Process(Descriptor* pDescriptor) {
     std::string recvbuf(1024, 0);
-    Socket* pSocket = static_cast<Socket*>(pDescriptor);
-    int len = recv(pSocket->Getfd(), nullptr, 0, MSG_PEEK);
-    std::cout << "recived " << len << " bytes form client" << std::endl << recvbuf << std::endl;
-    int n = read(pSocket->Getfd(), &recvbuf[0], recvbuf.length());
+    int n = read(*pDescriptor, &recvbuf[0], recvbuf.length());
 
     if (n == 0) {
-        std::cout << pSocket->GetIpStr() << " close" << std::endl;
         return CLOSE;
     } else {
-        std::cout << pSocket->GetIpStr() << ">" << std::endl;
-        for (int i = 0; i < n; i++)
-            std::cout << recvbuf[i];
-        std::cout << std::endl;
-        write(pSocket->Getfd(), &recvbuf[0], recvbuf.length());
+        write(*pDescriptor, &recvbuf[0], recvbuf.length());
     }
     return OK;
 }

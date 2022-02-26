@@ -107,12 +107,18 @@ std::ostream& operator<< (std::ostream &os, RequestHeader &req) {
 }
 
 
-ResponseHeader* ResponseHeader::BuildDefaultResponseHeader() {
+ResponseHeader* ResponseHeader::BuildDefaultResponseHeader(RequestHeader *req) {
     Ptr<ResponseHeader> pRes {new ResponseHeader()};
     pRes->version = "HTTP/1.1";
     pRes->status_code = 200;
-    (*pRes)["Content-Type"] = "text/html";
-
+    if (StringTool::EndWith(req->url, ".html"))
+        (*pRes)["Content-Type"] = "text/html";
+    else if (StringTool::EndWith(req->url, ".js"))
+        (*pRes)["Content-Type"] = "application/javascript";
+    else if (StringTool::GetFileType(req->url).length() != 0)
+        (*pRes)["Content-Type"] = "text/" + StringTool::GetFileType(req->url);
+    else
+        (*pRes)["Content-Type"] = "text/plain";
     return pRes.Detach();
 }
 
@@ -168,14 +174,13 @@ ProcessStatus HttpModule::Process(Descriptor* pDescriptor) {
         Ptr<RequestHeader> req = RequestParser(recvbuf);
     
 
-        std::string content_file = working_directory_ + "/html";
-        if (content_file.back() != '/')
+        std::string content_file = working_directory_;
         if (req->url.length() == 1 && req->url[0] == '/')
-            content_file.append("/index.html");
-        else 
-            content_file.append(req->url);
+            req->url = std::string("/index.html");
+        
+        content_file.append(req->url);
 
-        Ptr<ResponseHeader> pRes = ResponseHeader::BuildDefaultResponseHeader();
+        Ptr<ResponseHeader> pRes = ResponseHeader::BuildDefaultResponseHeader(req);
         File content(content_file);
         if (content.IsOpen()) {
             pRes->Insert("Content-Length", std::to_string(content.GetFileSize()));
