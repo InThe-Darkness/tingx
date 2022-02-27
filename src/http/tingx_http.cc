@@ -66,7 +66,6 @@ Request* RequestParser(std::string &buffer) {
     Status st = METHOD;
     std::string key, val;
     while (i < buffer.length()) {
-
         switch (st) {
         case METHOD:
             while (buffer[i] != ' ') i++;

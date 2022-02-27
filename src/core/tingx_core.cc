@@ -286,7 +286,7 @@ static int RootCommandHandler(Module* pModule, ParserObject* obj) {
     return 0;
 }
 
-std::vector<Command> core_module_commands {
+static std::vector<Command> core_module_commands {
     Command{ std::string("listen"), 1, ListenCommandHandler },
     Command{ std::string("root"), 1, RootCommandHandler },
 };

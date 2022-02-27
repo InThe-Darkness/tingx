@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <fstream>
 #include <map>
+#include <openssl/sha.h>
 
 using namespace tingx;
 using namespace std;
@@ -32,10 +33,20 @@ static std::string test_recv_header =
 
 int main() {
 
-    Request *req = RequestParser(test_recv_header);
-    cout << req->header << endl;
-    cout << "body:" << req->body << endl;
-    cout << "host: " << req->header["Host"] << endl;
-    delete req;
+    string str("git_test");
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    /*
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, str.c_str(), str.size());
+    SHA256_Final(hash, &sha256);
+    char buf[2];
+    string result("");
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+        sprintf(buf, "%02x", hash[i]);
+        result += buf;
+    }
+    cout << result << endl;
+    */
     return 0;
 }

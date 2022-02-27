@@ -50,6 +50,12 @@ private:
     Descriptor *pDescriptor;
 };
 
+
+// command slot
+
+//int tingx_conf_string_slot(Module *pModule, ParserObject *obj);
+
+
 }
 
 #endif

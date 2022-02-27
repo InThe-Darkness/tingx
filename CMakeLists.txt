@@ -25,3 +25,5 @@ add_executable(tingx ${SRC_FILES} ${PROJECT_SOURCE_DIR}/src/tingx.cc)
 add_executable(client ${PROJECT_SOURCE_DIR}/test/client.cc)
 add_executable(test ${PROJECT_SOURCE_DIR}/test/test.cc ${SRC_FILES})
 add_executable(PtrTest ${PROJECT_SOURCE_DIR}/test/PtrTest.cc)
+
+# target_link_options(test INTERFACE "-lcrypto")
